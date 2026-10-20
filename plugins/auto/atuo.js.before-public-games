@@ -1,0 +1,27 @@
+export default async function before(m, { conn, isAdmin, isOwner, isROwner }) {
+    let chat = global.db.data.chats[m.chat];
+    let user = global.db.data.users[m.sender];
+    let settings = global.db.data.settings[conn.user.jid];
+    
+    // 1️⃣ لو العضو محظور
+    if (user?.banned && !isOwner && !isROwner) {
+        return true;
+    }
+    
+    // 2️⃣ لو وضع المشرفين فقط مفعل (chat.modoadmin)
+    if (chat?.modoadmin && !isOwner && !isROwner && !isAdmin) {
+        return true;
+    }
+    
+    // 3️⃣ لو البوت مقفول للمطور فقط (settings.self)
+    if (settings?.self && !isOwner && !isROwner) {
+        return true;
+    }
+    
+    // 4️⃣ لو الخاص مقفول (settings.privateLocked)
+    if (!m.isGroup && settings?.privateLocked && !isOwner && !isROwner) {
+        return true;
+    }
+    
+    return false;
+};

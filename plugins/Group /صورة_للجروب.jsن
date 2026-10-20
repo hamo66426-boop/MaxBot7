@@ -1,0 +1,95 @@
+// حہּٰقَــــوٰقَ 𝒛𝒊𝒂𝒅-𝒅𝒗 💻🔥
+// إصلاح شامل لتعليق وخطأ تغيير صورة الجروب
+
+import { downloadContentFromMessage } from '@whiskeysockets/baileys';
+import sharp from 'sharp';
+import JimpPkg from 'jimp';
+
+// حل مشكلة Jimp الداخلية في Baileys
+global.Jimp = JimpPkg.default || JimpPkg;
+
+let handler = async (m, { conn, isAdmin, isBotAdmin, isOwner }) => {
+    if (!m.isGroup) return m.reply('❌ *هذا الأمر يعمل في الجروبات فقط*');
+    if (!isAdmin && !isOwner) return m.reply('❌ *يجب أن تكون مشرفاً لاستخدام هذا الأمر*');
+    if (!isBotAdmin) return m.reply('❌ *يجب أن يكون البوت مشرفاً*');
+
+    // التأكد من الرد على صورة
+    let q = m.quoted ? m.quoted : m;
+    let mime = (q.msg || q).mimetype || '';
+
+    if (!mime || !mime.includes('image')) return m.reply('❌ *الرجاء الرد على صورة فقط*');
+
+    await m.reply('⏳ *جاري تغيير صورة الجروب...*');
+
+    try {
+        // تحميل صورة الميديا
+        let media = await q.download?.();
+
+        if (!media) {
+            let stream = await downloadContentFromMessage(q.msg || q, 'image');
+            let buffer = Buffer.from([]);
+            for await (const chunk of stream) {
+                buffer = Buffer.concat([buffer, chunk]);
+            }
+            media = buffer;
+        }
+
+        // تحجيم الصورة إلى مقاس 720x720 المناسب للواتساب بواسطة sharp
+        const resized = await sharp(media)
+            .resize(720, 720, { fit: 'cover' })
+            .toFormat('jpeg')
+            .toBuffer();
+
+        // إرسال البروتوكول الصحيح لسيرفر الواتساب مع تحديد target للجروب
+        await conn.query({
+            tag: 'iq',
+            attrs: {
+                target: m.chat,
+                to: '@s.whatsapp.net',
+                type: 'set',
+                xmlns: 'w:profile:picture'
+            },
+            content: [
+                {
+                    tag: 'picture',
+                    attrs: { type: 'image' },
+                    content: resized
+                }
+            ]
+        });
+
+        let successMsg = `   ⃝⃘︢︣֟፝ · ͟͟͞͞➳ 𝑩𝑶𝑻 𝑨𝒍𝑯𝑨𝑲𝑨𝑴≈﴾26﴿
+✅ *تم تغيير الصورة بنجاح*
+
+📸 *الصورة الجديدة تم تعيينها*
+👤 *بواسطة:* @${m.sender.split('@')[0]}
+📅 *التاريخ:* ${new Date().toLocaleString('ar-EG')}
+
+✨ *الجروب الآن بمظهر جديد*
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`;
+
+        await conn.sendMessage(m.chat, {
+            image: resized,
+            caption: successMsg,
+            mentions: [m.sender]
+        }, { quoted: m });
+
+    } catch (err) {
+        console.error(err);
+        await m.reply(`   ⃝⃘︢︣֟፝ · ͟͟͞͞➳ 𝑩𝑶𝑻 𝑨𝒍𝑯𝑨𝑲𝑨𝑴≈﴾26﴿
+❌ *فشل تغيير صورة الجروب*
+
+⚠️ *السبب:* ${err.message}
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`);
+    }
+};
+
+handler.help = ['صورة_للجروب (رد على صورة لتغيير صورة الجروب الحالية)'];
+handler.tags = ['group'];
+handler.command = /^(صورة_للجروب|تغيير_صورة_الجروب|setgrouppp|icon)$/i;
+
+handler.group = true;
+handler.admin = true;
+handler.botAdmin = true;
+
+export default handler;

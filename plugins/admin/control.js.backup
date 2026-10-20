@@ -1,0 +1,252 @@
+// plugins/طرد.js - طرد / رفع / خفض 👮‍♂️
+// ✧ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂
+
+const HEADER = `   ⃝⃘︢︣֟፝ · ͟͟͞͞➳ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂`
+const LINE = `𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦┤`
+const FOOT = `𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`
+
+// 🔢 استخراج الرقم من أي صيغة JID
+function extractNumber(jid) {
+    if (!jid) return ''
+    return String(jid).split('@')[0].split(':')[0].replace(/[^0-9]/g, '')
+}
+
+// 🛡️ فحص لو المشارك هو البوت (بكل الصيغ)
+function isBotParticipant(participant, conn) {
+    const botFullJid = conn.user?.jid || ''
+    const botNumber = extractNumber(botFullJid)
+    const botLid = conn.user?.lid || ''
+    const botLidNumber = extractNumber(botLid)
+
+    const candidates = new Set()
+    candidates.add(extractNumber(participant.id))
+    if (participant.phoneNumber) candidates.add(extractNumber(participant.phoneNumber))
+    if (participant.jid) candidates.add(extractNumber(participant.jid))
+    if (participant.lid) candidates.add(extractNumber(participant.lid))
+
+    candidates.delete('')
+
+    return Array.from(candidates).some(num =>
+        num === botNumber || num === botLidNumber
+    )
+}
+
+let handler = async (m, { conn, command, text, isAdmin, isOwner, isROwner, groupMetadata }) => {
+    try {
+        // 1. التحقق من الصلاحيات
+        if (!isAdmin && !isOwner && !isROwner) {
+            return conn.reply(m.chat, `${HEADER}
+${LINE}
+│
+│ ❌ *صـلاحـيـات غـيـر كـافـيـة*
+│
+│ 🔮 هـذا الأمـر مـخـصـص لـلـمـشـرفـيـن فـقـط
+│
+${FOOT}`, m)
+        }
+
+        // 2. تحديد العضو المستهدف
+        let user
+        if (m.mentionedJid && m.mentionedJid[0]) {
+            user = m.mentionedJid[0]
+        } else if (m.quoted && m.quoted.sender) {
+            user = m.quoted.sender
+        } else if (text) {
+            const number = extractNumber(text)
+            if (number.length >= 11 && number.length <= 13) {
+                user = number + '@s.whatsapp.net'
+            } else {
+                return conn.reply(m.chat, `${HEADER}
+${LINE}
+│
+│ ❌ *الـرقـم غـيـر صـحـيـح*
+│
+│ 🔮 ابـعـتـه بـصـيـغـة صـحـيـحـة:
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ .${command} 201234567890
+│
+${FOOT}`, m)
+            }
+        }
+
+        if (!user) {
+            return conn.reply(m.chat, `${HEADER}
+${LINE}
+│
+│ ❌ *طـريـقـة الاسـتـخـدام*
+│
+│ ❄️ ═══════════════ ❄️
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ .${command} @مـنـشـن
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ .${command} (بالـرد)
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ .${command} 201234567890
+│
+${FOOT}`, m)
+        }
+
+        // 3. جلب بيانات الجروب
+        const group = groupMetadata || await conn.groupMetadata(m.chat)
+
+        // 4. ✅ التحقق من البوت أدمن — بالطريقة الصحيحة
+        const botParticipant = group.participants.find(p =>
+            isBotParticipant(p, conn)
+        )
+
+        if (!botParticipant || !botParticipant.admin) {
+            return conn.reply(m.chat, `${HEADER}
+${LINE}
+│
+│ ❌ *خـطـأ*
+│
+│ 🤖 الـبـوت مـش أدمن فـي الـمـجـمـوعـة!
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ اعـمـلـه أدمن وأعـيـد الأمـر
+│
+${FOOT}`, m)
+        }
+
+        // 5. منع التعديل على المطور
+        const ownerNumbers = (global.owner || []).map(n => extractNumber(n))
+        const targetNumber = extractNumber(user)
+
+        const isTargetOwner = ownerNumbers.includes(targetNumber)
+        const isTargetBot = targetNumber === extractNumber(conn.user?.jid)
+
+        if (isTargetOwner || isTargetBot) {
+            if (command === 'طرد' || command === 'خفض') {
+                return conn.reply(m.chat, `${HEADER}
+${LINE}
+│
+│ 🛡️ *الـحـمـايـة الـتـلـقـائـيـة*
+│
+│ ❄️ ═══════════════ ❄️
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ مـيـنـفـعـش تـعـمـل ده عـلـى الـبـوت أو الـمـطـور
+│
+${FOOT}`, m)
+            }
+        }
+
+        // 6. تنفيذ الأمر
+        if (command === 'طرد') {
+            await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
+
+            const userMention = `@${extractNumber(user)}`
+            const senderMention = `@${extractNumber(m.sender)}`
+
+            await conn.sendMessage(m.chat, {
+                text: `${HEADER}
+${LINE}
+│
+│ ❄️ *تـم الـطـرد بـنـجـاح*
+│
+│ ❄️ ═══════════════ ❄️
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـعـضـو: ${userMention}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ بـواسـطـة: ${senderMention}
+│
+│ 🩸 *بـاي بـاي يـا حـلـلـو*
+│
+${FOOT}`,
+                mentions: [user, m.sender]
+            }, { quoted: m })
+
+        } else if (command === 'رفع') {
+            const isAlreadyAdmin = group.participants.some(p => {
+                const pNum = extractNumber(p.id)
+                const pPhone = extractNumber(p.phoneNumber)
+                return (pNum === targetNumber || pPhone === targetNumber) &&
+                    (p.admin === 'admin' || p.admin === 'superadmin')
+            })
+
+            if (isAlreadyAdmin) {
+                return conn.reply(m.chat, `${HEADER}
+${LINE}
+│
+│ ⚠️ *تـنـبـيـه*
+│
+│ ❄️ ═══════════════ ❄️
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـعـضـو ده أدمن بـالـفـعـل
+│
+${FOOT}`, m)
+            }
+
+            await conn.groupParticipantsUpdate(m.chat, [user], 'promote')
+
+            const userMention = `@${extractNumber(user)}`
+            const senderMention = `@${extractNumber(m.sender)}`
+
+            await conn.sendMessage(m.chat, {
+                text: `${HEADER}
+${LINE}
+│
+│ 👑 *تـمـت الـتـرقـيـة بـنـجـاح*
+│
+│ ❄️ ═══════════════ ❄️
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـمـشـرف: ${userMention}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ بـواسـطـة: ${senderMention}
+│
+│ ❄️ *مـبـروك الـمـنـصـب الـجـديـد*
+│
+${FOOT}`,
+                mentions: [user, m.sender]
+            }, { quoted: m })
+
+        } else if (command === 'خفض') {
+            const isAdminUser = group.participants.some(p => {
+                const pNum = extractNumber(p.id)
+                const pPhone = extractNumber(p.phoneNumber)
+                return (pNum === targetNumber || pPhone === targetNumber) &&
+                    (p.admin === 'admin' || p.admin === 'superadmin')
+            })
+
+            if (!isAdminUser) {
+                return conn.reply(m.chat, `${HEADER}
+${LINE}
+│
+│ ⚠️ *تـنـبـيـه*
+│
+│ ❄️ ═══════════════ ❄️
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـعـضـو ده مـش أدمن
+│
+${FOOT}`, m)
+            }
+
+            await conn.groupParticipantsUpdate(m.chat, [user], 'demote')
+
+            const userMention = `@${extractNumber(user)}`
+            const senderMention = `@${extractNumber(m.sender)}`
+
+            await conn.sendMessage(m.chat, {
+                text: `${HEADER}
+${LINE}
+│
+│ ❄️ *تـم الـخـفـض بـنـجـاح*
+│
+│ ❄️ ═══════════════ ❄️
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـعـضـو: ${userMention}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ بـواسـطـة: ${senderMention}
+│
+│ 🩸 *ارجـع لأصـلـك*
+│
+${FOOT}`,
+                mentions: [user, m.sender]
+            }, { quoted: m })
+        }
+
+    } catch (e) {
+        console.error('[طرد]', e)
+        conn.reply(m.chat, `${HEADER}
+${LINE}
+│
+│ ❌ *فـشـل تـنـفـيـذ الأمـر*
+│
+│ 🔮 ${e.message?.slice(0, 100)}
+│
+${FOOT}`, m)
+    }
+}
+
+handler.help = ['طرد', 'رفع', 'خفض']
+handler.tags = ['admin']
+handler.command = /^(طرد|رفع|خفض)$/i
+handler.group = true
+handler.admin = true
+handler.botAdmin = true
+
+export default handler

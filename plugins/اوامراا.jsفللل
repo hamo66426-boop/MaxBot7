@@ -1,0 +1,151 @@
+// plugins/menu.js
+// ✧ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂ - القائمة الرئيسية ❄️
+
+import { performance } from 'perf_hooks'
+import fetch from 'node-fetch'
+import https from 'https'
+import http from 'http'
+import { ButtonV2 } from '../core/NIXCODE.js'
+
+function downloadBuffer(url) {
+  return new Promise((resolve, reject) => {
+    const client = url.startsWith('https') ? https : http
+    const req = client.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*'
+      }
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return downloadBuffer(res.headers.location).then(resolve).catch(reject)
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP ${res.statusCode}`))
+      }
+      const chunks = []
+      res.on('data', c => chunks.push(c))
+      res.on('end', () => resolve(Buffer.concat(chunks)))
+      res.on('error', reject)
+    })
+    req.on('error', reject)
+    req.setTimeout(30000, () => {
+      req.destroy()
+      reject(new Error('Timeout'))
+    })
+  })
+}
+
+let handler = async (m, { conn, usedPrefix: _p }) => {
+  try {
+    let old = performance.now()
+    let neww = performance.now()
+    let speed = (neww - old).toFixed(4)
+
+    const user = await conn.getName(m.sender)
+    const fecha = new Date().toLocaleDateString('ar-SA', { 
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+    })
+    const hora = new Date().toLocaleTimeString('ar-SA')
+
+    await conn.sendMessage(m.chat, { react: { text: '❄️', key: m.key } })
+
+    // ═══════════════════════════════════════
+    // 🎥 1) الفيديو الدائري (PTV)
+    // ═══════════════════════════════════════
+    try {
+      const buffer = await downloadBuffer('https://github.com/tast53534-svg/-26-/raw/refs/heads/main/H14FNZ17S6.mp4')
+
+      console.log(`[menu-video] Downloaded: ${buffer.length} bytes`)
+
+      if (buffer && buffer.length > 1000) {
+        await conn.sendMessage(m.chat, {
+          video: buffer,
+          ptv: true,
+          gifPlayback: false,
+          mimetype: 'video/mp4',
+          caption: '',
+          fileName: 'video.mp4'
+        }, { quoted: m })
+      } else {
+        console.error('[menu-video] Buffer صغير جداً:', buffer?.length)
+      }
+    } catch (videoErr) {
+      console.error('[menu-video]', videoErr.message)
+    }
+
+    // ═══════════════════════════════════════
+    // 📋 2) القائمة الرئيسية بأزرار ButtonV2
+    // ═══════════════════════════════════════
+    let menuText = `   ⃝⃘︢︣֟፝ · ͟͟͞͞𝐘𝐨𝐑𝐇𝐚· ͟͟͞͞➳ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦┤
+│
+│ ❄️ *مـعـلـومـات الـوحـدة*
+│
+│ ❄️ ═══════════════ ❄️
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الاسـم: ${user}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـرقـم: ${m.sender.split('@')[0]}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـبـيـنـج: ${speed}ms
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـتـشـغـيـل: ${await getUptime()}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـتـاريـخ: ${fecha}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـوقـت: ${hora}
+│
+│ ❄️ ═══════════════ ❄️
+│ 🔮 *اخـتـر الـقـسـم مـن الأسـفـل*
+│
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`
+
+    await new ButtonV2(conn)
+      .setBody(menuText)
+      .setFooter('꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂')
+      .setThumbnail('https://github.com/tast53534-svg/-26-/raw/refs/heads/main/dacb784d5ec6d99cdde0287e7fab5ccf.jpg')
+      .addRawButton({
+        buttonText: { displayText: '📂 الأقـسـام الـرئـيـسـيـة' },
+        buttonId: 'menu',
+        type: 1,
+        nativeFlowInfo: {
+          name: 'single_select',
+          paramsJson: JSON.stringify({
+            title: "اخـتـر الـقـسـم",
+            sections: [{
+              title: "❄️ الأقـسـام",
+              rows: [
+                { title: "👮‍♂️ قـسـم المشرفين",           description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق1"  },
+                { title: "🎨 قـسـم الملصقات",             description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق2"  },
+                { title: "🎮 قـسـم الألعاب",              description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق3"  },
+                { title: "📥 قـسـم التحميل",             description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق4"  },
+                { title: "🔧 قـسـم الأدوات",             description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق5"  },
+                { title: "🤖 قـسـم الذكاء",              description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق7"  },
+                { title: "🖼️ قـسـم الصور",              description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق9"  },
+                { title: "🎉 قـسـم التسلية",             description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق10" },
+                { title: "📿 قـسـم الإسلاميات",          description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق16" },
+                { title: "🔍 قـسـم البحث",               description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق15" },
+                { title: "🤖 قـسـم بوتات فرعية",          description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق14" },
+                { title: "👥 قـسـم الجروبات",            description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق13" },
+                { title: "👑 قـسـم المطور",              description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق12" },
+                { title: "📂 قـسـم آخر",                description: "❄️ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂", id: ".ق17" }
+              ]
+            }]
+          })
+        }
+      })
+      .addButton('🤖 تـنـصـيـب وحـدة', '.تنصيب')
+      .send(m.chat)
+
+  } catch (e) {
+    console.error('[꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂-Menu] Error:', e);
+  }
+}
+
+async function getUptime() {
+  let totalSeconds = process.uptime()
+  let hours = Math.floor(totalSeconds / 3600)
+  let minutes = Math.floor((totalSeconds % 3600) / 60)
+  let seconds = Math.floor(totalSeconds % 60)
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+}
+
+handler.help = ['menu']
+handler.tags = ['main']
+handler.command = ['الاوامر', 'menu', 'اوامر', 'القائمة', 'منيو']
+
+export default handler

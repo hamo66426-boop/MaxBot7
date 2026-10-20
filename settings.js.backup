@@ -1,0 +1,77 @@
+// settings.js
+// ✧ ꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂ - Configuration ✧
+
+import { unwatchFile, watchFile } from 'fs'
+import chalk from 'chalk'
+import { fileURLToPath } from 'url'
+import fs from 'fs'
+import fetch from 'node-fetch'
+import axios from 'axios'
+import moment from 'moment-timezone'
+
+global.owner = ['3123028488256', '201024109563', "180943482532081"]
+
+global.mods = []
+global.prems = []
+
+global.baileys = '@whiskeysockets/baileys'
+global.botName = '꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂'
+global.botNameShort = '꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂'
+global.watermark = '꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂'
+
+global.fetch = fetch
+global.axios = axios
+global.moment = moment
+global.fs = fs
+
+global.packname = '꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂'
+global.author = '꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂'
+
+global.multiplier = 85
+
+global.botNumberCode = "201128290021"
+
+global.ch = {
+  ch1: '120363427010273264@newsletter',
+  ch2: '120363427010273264@newsletter'
+}
+
+global.yt = 'https://youtube.com/@youssf-f8i?si=WUZBmyryEpziKXS_'
+global.ig = 'https://www.instagram.com/go24.q?igsh=MWdoYWtjZWNnMGhncQ=='
+global.md = 'https://github.com/PROTOTYPE/PROTOTYPE-MD'
+global.fb = 'https://www.facebook.com/groups/prototype'
+global.tk = 'https://www.tiktok.com/@5trua5?_r=1&_t=ZS-97C5LgOJgX6'
+global.paypal = 'https://paypal.me/Prototype'
+global.soporteGB = 'https://whatsapp.com/channel/0029VbCPEZ88F2pNsd7YQB1i'
+
+global.dfailPool = [
+    'https://files.catbox.moe/kahw8j.jpg',
+    'https://files.catbox.moe/p6jm0g.jpg',
+    'https://files.catbox.moe/qeqajh.jpg',
+    'https://files.catbox.moe/kahw8j.jpg',
+    'https://files.catbox.moe/p6jm0g.jpg',
+    'https://files.catbox.moe/qeqajh.jpg',
+    'https://files.catbox.moe/kahw8j.jpg',
+    'https://files.catbox.moe/p6jm0g.jpg',
+    'https://files.catbox.moe/qeqajh.jpg'
+]
+
+global.dfailMessages = {
+    rowner: '❌ *المطور فقط*',
+    owner: '❌ *المطور فقط*',
+    mods: '❌ *القادة فقط*',
+    premium: '⭐ *بريميوم فقط*',
+    group: '👥 *جروبات فقط*',
+    private: '📱 *خاص فقط*',
+    admin: '👑 *مشرفين فقط*',
+    botAdmin: '🤖 *البوت مش أدمن*',
+    unreg: '📝 *غير مسجل*',
+    restrict: '🚫 *معطل حالياً*'
+}
+
+global.dfailTitle = '꧁𝑩𝒐𝒕 𝑨𝒍𝑯𝒂𝒌𝒆𝒎꧂ - YoRHa'
+global.dfailDesc = '⧼ 𝑷𝑹𝑶𝑻𝑶𝑻𝒀𝑷𝑬 ⧽'
+global.dfailUrl = 'https://github.com/youssf354'
+
+global.opts = global.opts || {}
+global.opts['restrict'] = true

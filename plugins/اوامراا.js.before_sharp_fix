@@ -1,0 +1,229 @@
+// plugins/menu.js
+// ✧ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂ - القائمة الرئيسية ❄️
+// ═══════════════════════════════════════════════════════════
+// ⚡ Developer: ꧁༒ 𝑯𝑨𝑴𝑶 ༒꧂
+// 🩸 يمنع سرقة الكود أو تعديله
+// ═══════════════════════════════════════════════════════════
+
+import { performance } from 'perf_hooks'
+import fetch from 'node-fetch'
+import https from 'https'
+import http from 'http'
+import { ButtonV2 } from '../core/NIXCODE.js'
+import sharp from 'sharp'
+
+// ═══════════════════════════════════════════════════════════
+// 📢 الإعدادات
+// ═══════════════════════════════════════════════════════════
+const CHANNEL_JID = '120363424844460135@newsletter'
+const CHANNEL_NAME = '꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂ 📢'
+const VIDEO_URL = 'https://github.com/tast53534-svg/-26-/raw/refs/heads/main/H14FNZ17S6.mp4'
+const THUMB_URL = 'https://github.com/tast53534-svg/-26-/raw/refs/heads/main/dacb784d5ec6d99cdde0287e7fab5ccf.jpg'
+const FOOTER = '꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂'
+
+// ═══════════════════════════════════════════════════════════
+// 🎨 Context Info (External Ad Reply + Forward Newsletter)
+// ═══════════════════════════════════════════════════════════
+const buildContext = (jid) => ({
+  mentionedJid: [jid],
+  isForwarded: true,
+  forwardingScore: 1,
+  forwardedNewsletterMessageInfo: {
+    newsletterJid: CHANNEL_JID,
+    newsletterName: CHANNEL_NAME,
+    serverMessageId: 0
+  },
+  externalAdReply: {
+    title: '꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂ - YoRHa Unit',
+    body: '❄️ 2B - YoRHa Unit No.2 Type B',
+    thumbnailUrl: THUMB_URL,
+    sourceUrl: 'https://github.com/tast53534-svg/-26-',
+    mediaType: 1,
+    renderLargerThumbnail: true
+  }
+})
+
+// ═══════════════════════════════════════════════════════════
+// 📥 تحميل الفيديو
+// ═══════════════════════════════════════════════════════════
+function downloadBuffer(url) {
+  return new Promise((resolve, reject) => {
+    const client = url.startsWith('https') ? https : http
+    const req = client.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*'
+      }
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return downloadBuffer(res.headers.location).then(resolve).catch(reject)
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP ${res.statusCode}`))
+      }
+      const chunks = []
+      res.on('data', c => chunks.push(c))
+      res.on('end', () => resolve(Buffer.concat(chunks)))
+      res.on('error', reject)
+    })
+    req.on('error', reject)
+    req.setTimeout(30000, () => {
+      req.destroy()
+      reject(new Error('Timeout'))
+    })
+  })
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🎯 المعالج الرئيسي
+// ═══════════════════════════════════════════════════════════
+let handler = async (m, { conn, usedPrefix: _p, isROwner }) => {
+  try {
+    let old = performance.now()
+    let neww = performance.now()
+    let speed = (neww - old).toFixed(4)
+
+    const user = await conn.getName(m.sender)
+    const fecha = new Date().toLocaleDateString('ar-SA', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    })
+    const hora = new Date().toLocaleTimeString('ar-SA')
+
+const usersData = global.db?.data?.users || {}
+const profile = usersData[m.sender] || {}
+const rank = isROwner ? 'رئيس' : 'مواطن'
+const level = isROwner ? 999 : Number(profile.level || 0)
+const userCount = Object.keys(usersData).length
+const xml = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const menuSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#080914"/>
+    <stop offset="55%" stop-color="#17102b"/>
+    <stop offset="100%" stop-color="#080914"/>
+  </linearGradient>
+  <linearGradient id="gold">
+    <stop offset="0%" stop-color="#8e6a2e"/>
+    <stop offset="50%" stop-color="#ffe6a0"/>
+    <stop offset="100%" stop-color="#a77b35"/>
+  </linearGradient>
+</defs>
+<rect width="900" height="900" rx="48" fill="url(#bg)"/>
+<rect x="20" y="20" width="860" height="860" rx="38" fill="none" stroke="url(#gold)" stroke-width="3"/>
+<path d="M40 210 L250 20 M650 880 L860 670" stroke="#9868ed" stroke-width="3" opacity=".45"/>
+<circle cx="450" cy="145" r="64" fill="#24183b" stroke="url(#gold)" stroke-width="3"/>
+<text x="450" y="164" text-anchor="middle" font-size="48" fill="#ffe6a0">✦</text>
+<text x="450" y="260" text-anchor="middle" font-family="sans-serif" font-size="54" font-weight="bold" fill="#ffe6a0">MAX BOT</text>
+<text x="450" y="305" text-anchor="middle" font-family="sans-serif" font-size="25" fill="#cbb8ed">MAIN MENU • SYSTEM ONLINE</text>
+<path d="M100 340 H800" stroke="url(#gold)" stroke-width="2"/>
+<text x="450" y="395" text-anchor="middle" font-family="sans-serif" font-size="30" fill="#ffffff">${xml(user)}</text>
+<text x="450" y="455" text-anchor="middle" font-family="sans-serif" font-size="25" fill="#d4c4f5">الرتبة: ${xml(rank)}</text>
+<text x="450" y="510" text-anchor="middle" font-family="sans-serif" font-size="25" fill="#ffe6a0">المستوى: ${xml(level)}</text>
+<text x="450" y="565" text-anchor="middle" font-family="sans-serif" font-size="25" fill="#ffffff">المستخدمون: ${xml(userCount)}</text>
+<rect x="80" y="610" width="740" height="105" rx="20" fill="#ffffff" fill-opacity=".05" stroke="#70519e" stroke-width="2"/>
+<text x="450" y="653" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#cbb8ed">${xml(fecha)}</text>
+<text x="450" y="690" text-anchor="middle" font-family="sans-serif" font-size="23" fill="#ffe6a0">${xml(hora)}</text>
+<text x="450" y="790" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#b9a4dc">❄  YOUR WORLD • YOUR BOT  ❄</text>
+</svg>`
+const menuCard = await sharp(Buffer.from(menuSvg)).png().toBuffer()
+
+
+    await conn.sendMessage(m.chat, { react: { text: '❄️', key: m.key } })
+
+    // ═══════════════════════════════════════
+    // 📋 2) القائمة الرئيسية
+    // ═══════════════════════════════════════
+    let menuText = `   ⃝⃘︢︣֟፝ · ͟͟͞͞𝐘𝐨𝐑𝐇𝐚· ͟͟͞͞➳ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦┤
+│
+│ ❄️ *مـعـلـومـات الـوحـدة*
+│
+│ ❄️ ═══════════════ ❄️
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الاسـم: ${user}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـرقـم: ${m.sender.split('@')[0]}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـبـيـنـج: ${speed}ms
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـتـشـغـيـل: ${await getUptime()}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـتـاريـخ: ${fecha}
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ الـوقـت: ${hora}
+│
+│ ❄️ ═══════════════ ❄️
+│ 🔮 *اخـتـر الـقـسـم مـن الأسـفـل*
+│
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`
+
+    // ═══════════════════════════════════════
+    // 📂 الأقسام (مع أزرار للأوامر)
+    // ═══════════════════════════════════════
+    const sections = [{
+      title: "❄️ الأقـسـام",
+      rows: [
+        { title: "👮‍♂️ قـسـم المشرفين",           description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق1"  },
+        { title: "🎨 قـسـم الملصقات",             description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق2"  },
+        { title: "🎮 قـسـم الألعاب",              description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق3"  },
+        { title: "📥 قـسـم التحميل",             description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق4"  },
+        { title: "🔧 قـسـم الأدوات",             description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق5"  },
+        { title: "🤖 قـسـم الذكاء",              description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق7"  },
+        { title: "🖼️ قـسـم الصور",              description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق9"  },
+        { title: "🎉 قـسـم التسلية",             description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق10" },
+        { title: "📿 قـسـم الإسلاميات",          description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق16" },
+        { title: "🔍 قـسـم البحث",               description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق15" },
+        { title: "🤖 قـسـم بوتات فرعية",          description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق14" },
+        { title: "👥 قـسـم الجروبات",            description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق13" },
+        { title: "👑 قـسـم المطور",              description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق12" },
+        { title: "📂 قـسـم آخر",                description: "❄️ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂", id: ".ق17" }
+      ]
+    }]
+
+    // ═══════════════════════════════════════
+    // 3️⃣ محاولة الإرسال بأزرار ButtonV2
+    // ═══════════════════════════════════════
+    try {
+      await new ButtonV2(conn)
+        .setBody(menuText)
+        .setFooter(FOOTER)
+        .setThumbnail(menuCard)
+        .addRawButton({
+          buttonText: { displayText: '📂 الأقـسـام الـرئـيـسـيـة' },
+          buttonId: 'menu',
+          type: 1,
+          nativeFlowInfo: {
+            name: 'single_select',
+            paramsJson: JSON.stringify({
+              title: "اخـتـر الـقـسـم",
+              sections: sections
+            })
+          }
+        })
+        .addButton('🤖 تـنـصـيـب وحـدة', '.تنصيب')
+        .send(m.chat)
+    } catch (e) {
+      console.error('[menu] ButtonV2 failed:', e.message)
+
+      // ═══════════════════════════════════════
+      // 4️⃣ Fallback: نص عادي مع Context Info
+      // ═══════════════════════════════════════
+      await conn.sendMessage(m.chat, {
+        text: menuText,
+        contextInfo: buildContext(m.sender)
+      }, { quoted: m })
+    }
+
+  } catch (e) {
+    console.error('[꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂-Menu] Error:', e);
+  }
+}
+
+async function getUptime() {
+  let totalSeconds = process.uptime()
+  let hours = Math.floor(totalSeconds / 3600)
+  let minutes = Math.floor((totalSeconds % 3600) / 60)
+  let seconds = Math.floor(totalSeconds % 60)
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+}
+
+handler.help = ['menu']
+handler.tags = ['main']
+handler.command = ['الاوامر', 'menu', 'اوامر', 'القائمة', 'منيو']
+
+export default handler

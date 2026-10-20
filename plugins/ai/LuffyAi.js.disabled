@@ -1,0 +1,146 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: 'config/.env' });
+
+// plugins/لوفي.js - لوفي AI 👒
+let handler = async (m, { conn, text }) => {
+    // 1. التحقق من وجود النص
+    if (!text) return conn.reply(m.chat, `𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦┤
+│
+│ ❄️ *الاسـتـخـدام الـصـحـيـح:*
+│
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ لوفي [رسالتك]
+│
+│ ❄️ *مـثـال:*
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ .لوفي إيه رأيك في اللحمة؟
+│
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`, m)
+
+    // 2. رسالة جاري التحضير
+    let loadingMsg = await conn.sendMessage(m.chat, { 
+        text: `   ⃝⃘︢︣֟፝ · ͟͟͞͞𝑴𝑨𝑿 𝑩𝑶𝑻 ͟͟͞͞➳ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦┤
+│
+│ ❄️ *حمو بيفكر في الرد... استنى ثانية يا نجم 😎🐣*
+│
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`
+    }, { quoted: m });
+
+    try {
+        // ✅ البرومبت
+        let prompt = `انت مساعد واتساب اسمه حمو، بتتكلم باللهجة المصرية الطبيعية.
+شخصيتك هادية وعفوية، خفيف الدم من غير مبالغة، وردودك قصيرة ومفيدة.
+خلي طريقة كلامك قريبة من طريقة الشخص اللي بيكلمك، من غير ما تقلده بشكل مصطنع.
+اكتب كلام عادي من غير زخرفة أو تطويل للحروف أو علامات بين الحروف.
+استخدم ا بدل أ وإ، واستخدم ي بدل ى قدر الإمكان مع الحفاظ على وضوح الكلام.
+ماتستخدمش تنسيق مبالغ فيه، وماتكثرش الإيموجي، وماتتكلمش بحماس زيادة من غير داعي.
+اسم الشخص اللي بيكلمك حسب بيانات الرسالة: ${m.name || "مز"}.
+في بنت اسمها خلود، حمو بيدلعها اكتر حاجة لولتي، وممكن يقولها لولو.
+خلود بنوتة عسل وكيوت ودمها خفيف وغالية على حمو زي اخته، وبتحب الإيموجي 🐤.
+لو اللي بيكلمك عرّف نفسه بوضوح إنه خلود أو لولتي أو لولو، رحب بيه بلطف وبشكل طبيعي.
+ماتفترضش إن الشخص خلود لمجرد إنه ذكر اسمها، وماتدعيش إنك تعرف معلومات شخصية غير اللي اتقالتلك هنا.
+رد بالمصري وباختصار على الرسالة دي:
+${text}`;
+
+        const geminiKey = process.env.GEMINI_API_KEY;
+        if (!geminiKey) throw new Error('GEMINI_API_KEY مش موجود في config/.env');
+
+        const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=' + encodeURIComponent(geminiKey);
+
+        let response;
+        let data;
+
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          response = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(30000),
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.95,
+                maxOutputTokens: 500
+              }
+            })
+          });
+
+          data = await response.json().catch(() => ({}));
+
+          if (response.ok) break;
+
+          const status = response.status;
+          const errorMessage = data.error?.message || 'Gemini API error: ' + status;
+          const temporaryErrors = [429, 500, 502, 503, 504];
+
+          if (!temporaryErrors.includes(status) || attempt === 3) {
+            throw new Error(errorMessage);
+          }
+
+          await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+        }
+
+        let answer = data.candidates?.[0]?.content?.parts
+          ?.map(part => part.text || '')
+          .join('')
+          .trim() || 'مش قادر اجيبلك رد دلوقتي، جرب كمان شوية.';
+
+        // حذف رسالة التحميل
+        try { await conn.sendMessage(m.chat, { delete: loadingMsg.key }); } catch (e) {}
+
+        // ✅ إرسال الرد
+        let msg = `   ⃝⃘︢︣֟፝ · ͟͟͞͞𝑴𝑨𝑿 𝑩𝑶𝑻 ͟͟͞͞➳ ꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦┤
+│
+│ 🩸 *𝑴𝑶𝑵𝑲𝑬𝒀 𝑫. 𝑳𝑼𝑭𝑭𝒀 𝑨𝑰*
+│
+│ ❄️ ═══════════════ ❄️
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ رسـالـتـك: ${text}
+│
+│ ❄️ *الـرد:*
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ ${answer}
+│
+│ 🩸 *سـأكـون مـلـك الـقـراصـنـة!*
+│
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`;
+
+        await conn.sendMessage(m.chat, { 
+            text: msg,
+            contextInfo: {
+                externalAdReply: {
+                    title: "🩸 𝑴𝑶𝑵𝑲𝑬𝒀 𝑫. 𝑳𝑼𝑭𝑭𝒀 𝑨𝑰 🩸",
+                    body: "« سأكون ملك القراصنة ! »",
+                    thumbnailUrl: "https://files.catbox.moe/qeqajh.jpg",
+                    sourceUrl: '',
+                    mediaType: 1,
+                    renderLargerThumbnail: true
+                }
+            }
+        }, { quoted: m });
+
+    } catch (err) {
+        console.error('[꧁༒☬ 𝑴𝑨𝑿 𝑩𝑶𝑻 ☬༒꧂-لوفي]', err);
+        // حذف رسالة التحميل في حالة الخطأ
+        try {
+            await conn.sendMessage(
+                m.chat,
+                { text: '❌ حمو مقدرش يجيب الرد: ' + (err.message || 'خطأ غير معروف') },
+                { quoted: m }
+            );
+            try { await conn.sendMessage(m.chat, { delete: loadingMsg.key }); } catch (e) {}
+        } catch (sendErr) {
+            console.error('[Hamo] تعذر إرسال رسالة الخطأ:', sendErr);
+        }
+        conn.reply(m.chat, `𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦┤
+│
+│ ❌ *لـوفـي مـشـغـول حـالـيـاً*
+│ 🩸 *جـرب تـانـي بـعـد شـويـة!*
+│ 🩸 ${err.message}
+│
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`, m);
+    }
+};
+
+handler.help = ['لوفي (رسالة)'];
+handler.tags = ['ai'];
+handler.command = /^حمو$/i;
+
+export default handler;

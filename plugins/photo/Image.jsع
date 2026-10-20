@@ -1,0 +1,102 @@
+import fetch from 'node-fetch';
+
+const STYLES = {
+    'انيمي': { suffix: 'anime style, studio ghibli, detailed anime art', emoji: '🌸' },
+    'كرتون': { suffix: 'cartoon style, pixar, vibrant colors', emoji: '🎨' },
+    'زيتي': { suffix: 'oil painting, classical art, rich textures', emoji: '🖼️' },
+    'رسم_رصاص': { suffix: 'pencil sketch, black and white, detailed drawing', emoji: '✏️' },
+    'ماء': { suffix: 'watercolor painting, soft colors, artistic', emoji: '💧' },
+    'ثلاثي': { suffix: '3D render, hyperrealistic, cinema 4D, octane render', emoji: '🎭' },
+    'فانتازيا': { suffix: 'fantasy art, magical, epic, concept art', emoji: '🔮' },
+    'سايبر': { suffix: 'cyberpunk, neon lights, futuristic, dark atmosphere', emoji: '🌆' },
+    'قديم': { suffix: 'vintage, retro, old photo style, sepia', emoji: '📷' },
+    'ابيض_اسود': { suffix: 'black and white, monochrome, artistic photography', emoji: '⬛' }
+};
+
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+    if (!text) {
+        let styleList = Object.keys(STYLES).map(s => `┠≽ .${command} ${s} [وصف]`).join('\n');
+        let msg = `╗═══≪ 🌿🍉🍡 ≫═══╔
+🎨 *أداة الرسم بالذكاء الاصطناعي*
+
+📝 *الاستخدام:*
+${usedPrefix}${command} [النمط] [الوصف]
+
+🎭 *الأنماط المتاحة:*
+${styleList}
+
+📌 *مثال:*
+${usedPrefix}${command} انيمي قطة لطيفة
+
+​➥ 𝑲𝑰𝑵𝑮 𝑩𝑶𝑻 👑
+╝═══≪ 🌿🍉🍡 ≫═══╚`;
+        return conn.reply(m.chat, msg, m);
+    }
+
+    let parts = text.trim().split(/\s+/);
+    let firstWord = parts[0]?.toLowerCase();
+    let style = STYLES[firstWord];
+    let prompt;
+
+    if (style) {
+        prompt = parts.slice(1).join(' ');
+        if (!prompt) {
+            return conn.reply(m.chat, `⚠️ *اكتب الوصف بعد النمط.*\n📌 *مثال:* ${usedPrefix}${command} ${firstWord} قطة لطيفة`, m);
+        }
+    } else {
+        style = { suffix: 'detailed, high quality', emoji: '🎨' };
+        prompt = text.trim();
+    }
+
+    // رسالة جاري الرسم
+    let loadingMsg = await conn.sendMessage(m.chat, { 
+        text: `╗═══≪ 🌿🍉🍡 ≫═══╔\n🎨 *جاري الرسم...*\n\n🖌️ *النمط:* ${firstWord || 'عادي'}\n📝 *الوصف:* ${prompt.slice(0, 40)}...\n\n⏳ *قد تستغرق 10-20 ثانية*\n╝═══≪ 🌿🍉🍡 ≫═══╚`
+    }, { quoted: m });
+
+    try {
+        let englishText = prompt;
+        // ترجمة النص للإنجليزية
+        try {
+            let trRes = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
+            let trData = await trRes.json();
+            let translated = trData?.[0]?.map(x => x?.[0]).filter(Boolean).join('') || prompt;
+            if (translated) englishText = translated;
+        } catch {}
+
+        let fullPrompt = `${englishText}, ${style.suffix}, high quality, highly detailed`;
+        let encoded = encodeURIComponent(fullPrompt);
+        
+        let imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&enhance=true`;
+
+        // حذف رسالة التحميل
+        await conn.sendMessage(m.chat, { delete: loadingMsg.key });
+
+        // إرسال الصورة
+        let msg = `╗═══≪ 🌿🍉🍡 ≫═══╔
+🎨 *تـم الـرسـم بـنـجـاح!*
+
+🖌️ *النمط:* ${firstWord || 'عادي'} ${style.emoji}
+📝 *الوصف:* ${prompt}
+
+👑 *Powered By KING BOT*
+
+​➥ 𝑲𝑰𝑵𝑮 𝑩𝑶𝑻 👑
+╝═══≪ 🌿🍉🍡 ≫═══╚`;
+
+        await conn.sendMessage(m.chat, {
+            image: { url: imageUrl },
+            caption: msg
+        }, { quoted: m });
+
+    } catch (err) {
+        console.error('[رسم] error:', err.message);
+        try { await conn.sendMessage(m.chat, { delete: loadingMsg.key }); } catch (e) {}
+        conn.reply(m.chat, `❌ *حدث خطأ أثناء الرسم:* ${err.message}`, m);
+    }
+};
+
+handler.help = ['رسم [نمط] [وصف]'];
+handler.tags = ['images'];
+handler.command = /^(رسم||فن|art|draw)$/i;
+
+export default handler;

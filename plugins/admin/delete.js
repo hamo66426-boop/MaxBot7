@@ -1,0 +1,62 @@
+// plugins/حذف.js - حذف رسالة بالرد 🗑️
+let handler = async (m, { conn, usedPrefix, isAdmin, isOwner }) => {
+    // 1. التحقق من صلاحيات العضو
+    if (!isAdmin && !isOwner) return conn.reply(m.chat, '*[❗] هذا الأمر مخصص للمشرفين فقط!*', m);
+
+    // 2. التحقق من وجود رسالة مقتبسة
+    if (!m.quoted) return conn.reply(m.chat, `𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦┤
+│
+│ ❄️ *الاسـتـخـدام الـصـحـيـح:*
+│
+├ׁ̟̇˚₊· ͟͟͞͞➳❥ ${usedPrefix}حذف (بالرد على رسالة)
+│
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`, m);
+
+    try {
+        // 3. بناء مفتاح الرسالة المقتبسة بشكل صحيح لحذفها
+        let targetKey = {
+            remoteJid: m.chat,
+            fromMe: m.quoted.fromMe,
+            id: m.quoted.id,
+            participant: m.quoted.sender || m.quoted.participant
+        };
+
+        // تنفيذ الحذف
+        await conn.sendMessage(m.chat, { delete: targetKey });
+
+        // 4. نص رسالة التأكيد
+        let msg = `*تم ي حب 🥂🍻*`;
+
+        // 5. إرسال رسالة التأكيد
+        let confirmMsg = await conn.sendMessage(m.chat, { 
+            text: msg,
+            mentions: [m.sender]
+        }, { quoted: m });
+
+        // 6. حذف رسالة التأكيد وأمر المستخدم بعد 3 ثواني
+        setTimeout(async () => {
+            try {
+                if (confirmMsg?.key) await conn.sendMessage(m.chat, { delete: confirmMsg.key });
+                await conn.sendMessage(m.chat, { delete: m.key });
+            } catch (e) {}
+        }, 3000);
+
+    } catch (err) {
+        console.error("خطأ أثناء الحذف:", err);
+        conn.reply(m.chat, `𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦┤
+│
+│ ❌ *مـقـدرتش أحـذف الـرسـالـة*
+│ 🩸 *تـأكـد إن الـبـوت أدمن وأن الـرسـالـة مـش قـديـمـة*
+│
+𓉘᳟ี ⃞̸͢𑁃 ̚𓉝᳟ี ͟͟͞͞┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦┄꯭๋━┄꫶︦━┄꫶︦┄꯭๋━┄꯭๋━┄꫶︦╯`, m);
+    }
+}
+
+handler.help = ['حذف (بالرد على رسالة)'];
+handler.tags = ['admin'];
+handler.command = /^(حذف|مسح|delete|مسح_الرساله)$/i;
+handler.group = true;
+handler.admin = true;
+handler.botAdmin = true; // يشترط أن يكون البوت مشرفاً لتنفيذ الأمر
+
+export default handler;
